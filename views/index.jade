@@ -2,7 +2,7 @@ doctype html
 html
   head
     meta(charset='utf-8')
-    title MarketFlow
+    title MallFlow
     style.
       /*timeBar css*/
       form {
@@ -82,7 +82,7 @@ html
             span.icon-bar
             span.icon-bar
             span.icon-bar
-          a.navbar-brand(href='#') Market Flow
+          a.navbar-brand(href='#') Mall Flow
     .container-fluid
       .row
         .col-sm-2.col-md-2.sidebar
@@ -90,61 +90,74 @@ html
             li.active
               a(href='#')
                 | Overview 
-                span.sr-only (current)
+                span.sr-only (current)        
             li
-              input(name='zoomswitch', type='checkbox')
-            li
-              a(href='#') TimeBar
-            li
-              a(href='#') About
-          #shopTip(style="display:none")
-              
+              h5(style='padding-left: 1cm;') Zoom button
+              .zoomdiv(style='padding-left: 1cm;')
+                input(name='zoomswitch', type='checkbox')
+          .sidebar-module.sidebar-module-inset
+            h4 Current Shop
+            p
+              em current shop and its similar shops.
+              #shopTip(style="display:none")   
+
+          
         //-地图部分------------------------------------------------//
         .col-sm-8.col-md-offset-2
-          h1.page-header Market Map
+          h2.page-header Mall Map
           #map
-            svg(style='height:600px;width:900px')
+            svg(style='height:500px;width:900px')
         //-map 图例
         .col-sm-2
-          h1.page-header 图例
-            img.img-responsive(src='/images/legend.png')
+          h2.page-header Legend
+          #mapLegend
+            img.img-responsive(src='/images/legend.png',style='width:120px;weight:1000px')
         //-时间轴部分------------------------------------------------//
         .col-sm-8.col-md-offset-2
-          h1.page-header TimeLine
           #timeline
             svg(style='height:60px;width:900px') 
         .col-sm-2
           //-柱状图部分------------------------------------------------//
         .col-sm-8.col-md-offset-2
-          h1.page-header TimeBar
+          h2.page-header TimeBar
           #TimeBar
             .col-sm-10
-              form.form-horizontal(action='', role='form')
-                fieldset
-                  legend 选择日期
-                  .form-group
-                    label.col-md-2.control-label(for='dtp_input2') 选择日期
-                    .input-group.date.form_date.col-md-5(data-date='', data-date-format='yyyy-mm-dd', data-link-field='dtp_input2', data-link-format='yyyy-mm-dd')
-                      input.form-control(size='10', type='text', value='', readonly='')
-                      span.input-group-addon
-                        span.glyphicon.glyphicon-remove
-                      span.input-group-addon
-                        span.glyphicon.glyphicon-calendar
-                form
+              //-.btn-group.btn-group-justified(role='group', aria-label='...')
+              .col-sm-11
+                form.form-horizontal(action='', role='form')
+                  fieldset
+                      .form-group
+                        label.col-md-2.control-label(for='dtp_input2') 选择日期
+                        .input-group.date.form_date.col-md-5(data-date='', data-date-format='yyyy-mm-dd', data-link-field='dtp_input2', data-link-format='yyyy-mm-dd')
+                          input.form-control(size='10', type='text', value='', readonly='')
+                          span.input-group-addon
+                            span.glyphicon.glyphicon-remove
+                          span.input-group-addon
+                            span.glyphicon.glyphicon-calendar  
+                #Bartitle(style="display:none")
+                  h5 Flow for each shop in a day:
+              .col-sm-1
+                div
+                  button#dataButton.btn.btn-primary 生成  
+              
+              form#radioF(style="display:none")
+                .row
+                  .col-lg-3
                     label
-                      input(type='radio', name='mode', value='grouped')
-                      |  Grouped
+                    input(type='radio', name='mode', value='grouped')
+                    |  Grouped
+                  .col-lg-3
                     label
-                      input(type='radio', name='mode', value='stacked', checked='')
-                      |  Stacked
-                
-              button.btn.btn-primary#dataButton 生成  
-              svg(height='200',width='1000')
+                    input(type='radio', name='mode', value='stacked', checked='')
+                    |  Stacked
+                  .col-lg-6
+             
+            svg(height='200',width='1000')
             //-柱状图图例
         .col-sm-2
-          h1.page-header BarLegend
+          h2.page-header BarLegend
           #barLegend
-            svg(style='height:500px;width:200px')
+            svg(style='height:500px;width:300px')
 
       
         
@@ -205,7 +218,10 @@ html
         $("#dataButton").click(function () {
           if(barChartFlag != 0) {
             d3.selectAll("#TimeBar svg g").remove();
+            d3.selectAll("#barLegend svg g").remove();
           }
+          $("#radioF").show();
+          $("#Bartitle").show();
           selectPoint = [];
           d3.selectAll("image[name='selected']")
             .attr("border",function(){
@@ -278,6 +294,7 @@ html
                   .attr("y", function(d) { return y(d[1]); })
                   .attr("height", function(d) { return y(d[0]) - y(d[1]); });
 
+                
                 g.append("g")
                   .attr("class", "axis x")
                   .attr("transform", "translate(0," + heightBar + ")")
@@ -287,6 +304,7 @@ html
                 g.append("g")
                   .attr("class", "axis y")
                   .call(d3.axisLeft(y).ticks(y1Max))
+                
                 //- bar 图例g6
                 var g6=d3.select("#barLegend svg")
                 var legend = g6.append("g")
@@ -297,14 +315,14 @@ html
                   .enter().append("g")
                   .attr("transform", function(d, i) { return "translate(20," + i * 20 + ")"; });
                 legend.append("rect")
-                  .attr("x", widthBar - 19)
-                  .attr("width", 19)
-                  .attr("height", 19)
+                  .attr("x", -20)
+                  .attr("width", 20)
+                  .attr("height", 20)
                   .attr("fill", function(d, i) { return color(i) });
                 legend.append("text")
-                  .attr("x", widthBar - 24)
+                  .attr("x", 80)
                   .attr("y", 9.5)
-                  .attr("dy", "0.32em")
+                  .attr("dy", "1.0em")
                   .text(function(d) { return d; });
 
                 d3.selectAll("input")
@@ -365,12 +383,13 @@ html
       var voronoi = d3.voronoi()//-d3.geom.voronoi() for d3
         .extent([[0, 0], [mds_width+600, mds_height+300]]);//-.clipExtent() for v3
       //-商铺点读取和init
-      var rate=0.5;
+      var rate=0.8;
       var shops_pos = !{JSON.stringify(arrData)}.map(function (item) {
         return [item[0]*rate,item[1]*rate];
-      });//-).map(x => x * rate);
-      var shop_id = !{JSON.stringify(arrShopid)};
+      });
 
+      var shop_id = !{JSON.stringify(arrShopid)};
+      
       var shops_num = shops_pos.length;
 
       var vertices_num = 32000;
@@ -383,14 +402,15 @@ html
       var voronoi_paths;
       var vertices_area = [];  //散点聚类结果
       var shops_area = [];  //店铺聚类结果
-      var voronoi_threshold = 100;  //泰森多边形接受阈值
-      var cluster_threshold = 200;  //店铺中心点聚类阈值         
+      var voronoi_threshold = 100*rate;  //泰森多边形接受阈值
+      var cluster_threshold = 200*rate;  //店铺中心点聚类阈值         
       //-价格数据读取与排序
       var prices = !{JSON.stringify(arrPrice)};  //原始价格指数数组（下标与店铺一一对应）
       var prices_desc = (!{JSON.stringify(arrPrice)}).sort(function (x,y) {return y-x;});  //降序后的价格指数数组
       var center_price = prices_desc.slice(0, center_num);
       //-热图数据
-      var user_pos = !{JSON.stringify(arrPos)}.map(function(item){return item.map(function(i){ return [i[0]*rate,i[1]*rate]})})      //- var user_num = user_pos.length;
+      var user_pos = !{JSON.stringify(arrPos)}.map(function(item){return item.map(function(i){ return [i[0]*rate,i[1]*rate]})})
+      //- var user_num = user_pos.length;
       var color = d3.scaleSequential(d3.interpolateYlGnBu)
         .domain([0, 0.8]); 
       //-生成柱状图数据
@@ -543,10 +563,10 @@ html
           if(shops_area[s] == area) {
             if(s != index) {
               neibor+=(shop_id[s]+" ");
-            }     
+            } 
           }
-        }
-        return neibor;
+          }
+          return neibor;
       }
       //- 商铺点g3
       var g3 = d3.select("#map svg").append("g");
@@ -554,67 +574,67 @@ html
       var noClickName = "";
       g3.attr("class","g33");
       var nodes = g3.selectAll("image.event")
-        .data(shops_pos)
-        .enter()
+      .data(shops_pos)
+      .enter()
       nodes.append("image")
-        .attr("class","event")
-        .attr("id", function(d, i) { return shop_id[i]; })
-        .attr("x", function(d, i) { return d[0]; })
-        .attr("y", function(d, i) { return d[1]; })
-        .attr("data-toggle","tooltip")
-        .attr("data-placement","right")
-        .attr("title",function(d, i) { return shop_id[i]; })
-        .attr("width",function(d,i){
-          if(center_flag[i] === 1){
-              return 20;
+      .attr("class","event")
+      .attr("id", function(d, i) { return shop_id[i]; })
+      .attr("x", function(d, i) { return d[0]; })
+      .attr("y", function(d, i) { return d[1]; })
+      .attr("data-toggle","tooltip")
+      .attr("data-placement","right")
+      .attr("title",function(d, i) { return shop_id[i]; })
+      .attr("width",function(d,i){
+        if(center_flag[i] === 1){
+            return 20;
           } else {
-              return 14;
+            return 14;
           }
-        })
-        .attr("height",function(d,i){
-          if(center_flag[i] === 1){
-              return 20;
-          } else {
-              return 14;
-          }
-        })
-        .attr("xlink:href",function(d,i){
-          if(center_flag[i] === 1){
-              return "images/center1.png";
-          } else {
-              return "images/normal.png";
-          }
-        })
-        .on("mouseover",function(d,i){
-          $("#shopTip").html("当前店铺  " + shop_id[i] + "<br/>--------------------<br/>位置：" + d[0]+"<br/>"+d[1]+ "<br/>价格指数：" +prices[i] + "<br/>周边店铺：" +getNeibor(i)+"<br/>--------------------");
-          $("#shopTip").fadeIn("slow");
-          if(d3.select(this).attr("name") != "selected"){
-            if (center_flag[i] === 1){
-              d3.select(this)
-                .attr("xlink:href","images/mouseoverCenter1.png")
-            }
-            else{
-              d3.select(this)
-                .attr("xlink:href","images/mouseoverNormal.png")
-            }
-          }
-        })
-        .on("mouseout",function(d,i){
-          $("#shopTip").fadeOut("slow");
-          if(noClickName == cuName && d3.select(this).attr("name") != "selected"){
-            if (center_flag[i] === 1){
-              d3.select(this)
-                .attr("xlink:href","images/center1.png")
-            }
-            else{
-              d3.select(this)
-                .attr("xlink:href","images/normal.png")
-            }
+      })
+      .attr("height",function(d,i){
+        if(center_flag[i] === 1){
+          return 20;
+        } else {
+          return 14;
+        }
+      })
+      .attr("xlink:href",function(d,i){
+        if(center_flag[i] === 1){
+          return "images/center1.png";
+        } else {
+          return "images/normal.png";
+        }
+      })
+      .on("mouseover",function(d,i){
+        $("#shopTip").html("Current Shop " + shop_id[i] + "<br/>--------------------<br/>Location：" + d[0]+"<br/>"+d[1]+ "<br/>Price Norm：" +prices[i] + "<br/>Similar Shops：" +getNeibor(i)+"<br/>--------------------");
+        $("#shopTip").fadeIn("slow");
+        if(d3.select(this).attr("name") != "selected"){
+          if (center_flag[i] === 1){
+            d3.select(this)
+            .attr("xlink:href","images/mouseoverCenter1.png")
           }
           else{
-            noClickName = cuName;
+            d3.select(this)
+            .attr("xlink:href","images/mouseoverNormal.png")
           }
-        })
+        }
+      })
+      .on("mouseout",function(d,i){
+        $("#shopTip").fadeOut("slow");
+        if(noClickName == cuName && d3.select(this).attr("name") != "selected"){
+          if (center_flag[i] === 1){
+            d3.select(this)
+            .attr("xlink:href","images/center1.png")
+          }
+          else{
+            d3.select(this)
+            .attr("xlink:href","images/normal.png")
+          }
+        }
+        else{
+          noClickName = cuName;
+        }
+      })
         .on("click",function(d,i){
           if (d3.select(this).attr("name") == "selected" && center_flag[i] === 1){
             cuName = d3.select(this).attr("name");
@@ -640,7 +660,7 @@ html
               .attr("name", "selected")
               .attr("xlink:href","images/selectedNormal.png")
           }
-        });    
+        });  
        
 
         //- 时间轴 按天---------------------////////////////
