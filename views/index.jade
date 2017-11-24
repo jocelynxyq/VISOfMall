@@ -1,0 +1,836 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title MarketFlow
+    style.
+      /*timeBar css*/
+      form {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        /*position: absolute;*/
+        left: 10px;
+        /*top: 10px;*/
+      }
+      label {
+        display: block;
+      }
+      /*timeline css*/
+      .ticks {
+        font: 10px sans-serif;//*字体属性*/
+      }
+
+      .track,
+      .track-inset,
+      .track-overlay {
+        stroke-linecap: round;/*边框属性*/
+      }
+
+      .track {
+        stroke: #000;
+        stroke-opacity: 0.3;/*透明度*/
+        stroke-width: 10px;/*边框的宽度*/
+      }
+
+      .track-inset {
+        stroke: #ddd;
+        stroke-width: 8px;
+      }
+
+      .track-overlay {
+        pointer-events: stroke;
+        stroke-width: 50px;/*厚度*/
+        stroke: transparent;
+        cursor: crosshair;
+      }
+
+      .handle {
+        fill: #dee;
+        stroke: #000;
+        stroke-opacity: 1;
+        stroke-width: 1.25px;
+      }
+      body {
+        height:100%
+      }
+
+  block css
+    link(href='./bootstrap3/css/bootstrap.min.css', rel='stylesheet')
+    link(href='/css/dashboard.css', rel='stylesheet')
+    link(href="/css/bootstrap-datetimepicker.min.css",rel="stylesheet")
+    //-link(href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css",rel="stylesheet")
+    link(href="https://cdn.bootcss.com/bootstrap-switch/3.3.4/css/bootstrap2/bootstrap-switch.min.css",rel="stylesheet")
+  body
+    //-source
+    script(src='/js/d3-contour.v1.min.js')
+    //-script(src='/js/d3-scale-chromatic.v1.min.js')
+    script(src='/js/d3.min.js')
+    //-script(src='/js/map.js')
+
+    script(src='https://code.jquery.com/jquery-3.2.1.slim.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js')
+
+    script(src='https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js')
+    //-script(src='https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js')
+    script(src='https://cdn.bootcss.com/bootstrap-switch/3.3.4/js/bootstrap-switch.min.js')
+    script(src='./bootstrap3/js/bootstrap.min.js')
+    //----------------------------------------界面布局--------------------------/////////// 
+    nav.navbar.navbar-inverse.navbar-fixed-top
+      .container-fluid
+        .navbar-header
+          button.navbar-toggle.collapsed(type='button', data-toggle='collapse', data-target='#navbar', aria-expanded='false', aria-controls='navbar')
+            span.sr-only Toggle navigation
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href='#') Market Flow
+    .container-fluid
+      .row
+        .col-sm-2.col-md-2.sidebar
+          ul.nav.nav-sidebar
+            li.active
+              a(href='#')
+                | Overview 
+                span.sr-only (current)
+            li
+              input(name='zoomswitch', type='checkbox')
+            li
+              a(href='#') TimeBar
+            li
+              a(href='#') About
+          #shopTip(style="display:none")
+              
+        //-地图部分------------------------------------------------//
+        .col-sm-8.col-md-offset-2
+          h1.page-header Market Map
+          #map
+            svg(style='height:600px;width:900px')
+        //-map 图例
+        .col-sm-2
+          h1.page-header 图例
+            img.img-responsive(src='/images/legend.png')
+        //-时间轴部分------------------------------------------------//
+        .col-sm-8.col-md-offset-2
+          h1.page-header TimeLine
+          #timeline
+            svg(style='height:60px;width:900px') 
+        .col-sm-2
+          //-柱状图部分------------------------------------------------//
+        .col-sm-8.col-md-offset-2
+          h1.page-header TimeBar
+          #TimeBar
+            .col-sm-10
+              form.form-horizontal(action='', role='form')
+                fieldset
+                  legend 选择日期
+                  .form-group
+                    label.col-md-2.control-label(for='dtp_input2') 选择日期
+                    .input-group.date.form_date.col-md-5(data-date='', data-date-format='yyyy-mm-dd', data-link-field='dtp_input2', data-link-format='yyyy-mm-dd')
+                      input.form-control(size='10', type='text', value='', readonly='')
+                      span.input-group-addon
+                        span.glyphicon.glyphicon-remove
+                      span.input-group-addon
+                        span.glyphicon.glyphicon-calendar
+                form
+                    label
+                      input(type='radio', name='mode', value='grouped')
+                      |  Grouped
+                    label
+                      input(type='radio', name='mode', value='stacked', checked='')
+                      |  Stacked
+                
+              button.btn.btn-primary#dataButton 生成  
+              svg(height='200',width='1000')
+            //-柱状图图例
+        .col-sm-2
+          h1.page-header BarLegend
+          #barLegend
+            svg(style='height:500px;width:200px')
+
+      
+        
+    script(type = 'text/javascript').
+      //----------------------------------------柱状图部分----------------------------/////////// 
+      //-按每天 timebar 柱状图
+      Date.prototype.format = function(format)
+      {
+        var o = {
+          "M+" : this.getMonth()+1, //month
+          "d+" : this.getDate(),    //day
+          "h+" : this.getHours(),   //hour
+          "m+" : this.getMinutes(), //minute
+          "s+" : this.getSeconds(), //second
+          "q+" : Math.floor((this.getMonth()+3)/3),  //quarter
+          "S" : this.getMilliseconds() //millisecond
+        }
+        if(/(y+)/.test(format)) 
+          format=format.replace(RegExp.$1,
+          (this.getFullYear()+"").substr(4 - RegExp.$1.length));
+        for(var k in o)
+          if(new RegExp("("+ k +")").test(format))
+            format = format.replace(RegExp.$1,
+            RegExp.$1.length==1 ? o[k] :
+            ("00"+ o[k]).substr((""+ o[k]).length));
+        return format;
+      }
+
+      window.onload = function() {
+        //zoom按钮
+        //-$("body").append("<input name='zoomswitch' type='checkbox'/>");
+        $("[name='zoomswitch']").bootstrapSwitch({
+          'state':false,
+          onText:'Zoom',
+          offText:'OFF' 
+        });
+        $("input[name='zoomswitch']").on('switchChange.bootstrapSwitch', function(event, state) {
+          if (state == true)
+            zoom.scaleExtent([1,5]);
+          else 
+            zoom.scaleExtent([1,1]); 
+        });
+
+        $('.form_date').datetimepicker({
+          startDate:new Date('08/01/2017'),
+          endDate:new Date('08/31/2017'),
+          weekStart: 1,
+          todayBtn:  1,
+          autoclose: 1,
+          startView: 2,
+          minView: 2,
+          forceParse: 0
+          })
+          .on('changeDate', function(ev){
+            date = ev.date.format('yyyy-MM-dd');
+            console.log(ev.date.format('yyyy-MM-dd'));
+        });
+        $("#dataButton").click(function () {
+          if(barChartFlag != 0) {
+            d3.selectAll("#TimeBar svg g").remove();
+          }
+          selectPoint = [];
+          d3.selectAll("image[name='selected']")
+            .attr("border",function(){
+              selectPoint.push(d3.select(this).attr("id"))
+            });
+          var shopName = selectPoint;
+          var day = date;
+          $.ajax({  
+            type: "POST",  
+            url: "/barData",
+            dataType:'json',
+            data: {
+              shopName: shopName,
+              day: day
+            },   
+            async: true,
+            success: function (result) {
+              if(result.status == "ok") {
+                barChartFlag = 1;
+                console.log(result.result);
+                // The map array has m elements, representing the x-values shared by all series.
+                // The yz array has n elements, representing the y-values of each of the n series.
+                // Each yz[i] is an array of m non-negative numbers representing a y-value for xz[i].
+                // The y01z array has the same structure as yz, but with stacked [y₀, y₁] instead of y.
+                var map = result.result.timeLegend;
+                var m = map.length; // The number of values per series.
+                var x1 = map;
+                var x2 = d3.range(m);
+                var yz = result.result.shopFlow;
+                var n =  yz.length;// The number of series.
+                var y01z = d3.stack().keys(d3.range(n))(d3.transpose(yz));
+                var yMax = d3.max(yz, function(y) { return d3.max(y); });
+                var y1Max = d3.max(y01z, function(y) { return d3.max(y, function(d) { return d[1]; }); });
+                //-var svg = d3.select("svg"),
+                var g5=d3.select("#TimeBar svg"),
+                  margin = {top: 10, right: 10, bottom: 20, left: 100},
+                  widthBar = g5.attr("width") - margin.left - margin.right,
+                  heightBar = g5.attr("height") - margin.top - margin.bottom,
+                  g = g5.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                var datax = d3.scaleBand()
+                  .domain(x1)
+                  .rangeRound([0, widthBar])
+                  .padding(0.08);
+                var x = d3.scaleBand()
+                  .domain(x2)
+                  .rangeRound([0, widthBar])
+                  .padding(0.08);
+                var y = d3.scaleLinear()
+                  .domain([0, y1Max])
+                  .range([heightBar, 0]);
+                var y2 = d3.scaleLinear()
+                  .domain([0, yMax])
+                  .range([heightBar, 0])
+                var color = d3.scaleOrdinal()
+                  .domain(d3.range(n))
+                  .range(d3.schemeCategory20c);
+                var series = g.selectAll(".series")
+                  .data(y01z)
+                  .enter().append("g")
+                  .attr("fill", function(d, i) { return color(i); });
+                var rect = series.selectAll("rect")
+                  .data(function(d) { return d; })
+                  .enter().append("rect")
+                  .attr("x", function(d, i) { return x(i); })
+                  .attr("y", heightBar)
+                  .attr("width", x.bandwidth())
+                  .attr("height", 0);
+                rect.transition()
+                  .delay(function(d, i) { return i * 10; })
+                  .attr("y", function(d) { return y(d[1]); })
+                  .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+
+                g.append("g")
+                  .attr("class", "axis x")
+                  .attr("transform", "translate(0," + heightBar + ")")
+                  .call(d3.axisBottom(datax)
+                  .tickSize(0)
+                  .tickPadding(6));
+                g.append("g")
+                  .attr("class", "axis y")
+                  .call(d3.axisLeft(y).ticks(y1Max))
+                //- bar 图例g6
+                var g6=d3.select("#barLegend svg")
+                var legend = g6.append("g")
+                  .attr("font-size", 10)
+                  .attr("text-anchor", "end")
+                  .selectAll("g")
+                  .data(shopName)
+                  .enter().append("g")
+                  .attr("transform", function(d, i) { return "translate(20," + i * 20 + ")"; });
+                legend.append("rect")
+                  .attr("x", widthBar - 19)
+                  .attr("width", 19)
+                  .attr("height", 19)
+                  .attr("fill", function(d, i) { return color(i) });
+                legend.append("text")
+                  .attr("x", widthBar - 24)
+                  .attr("y", 9.5)
+                  .attr("dy", "0.32em")
+                  .text(function(d) { return d; });
+
+                d3.selectAll("input")
+                  .on("change", changed);
+
+                var timeout = d3.timeout(function() {
+                  d3.select("input[value=\"grouped\"]")
+                  .property("checked", true)
+                  .dispatch("change");
+                }, 1500);
+
+                function changed() {
+                  timeout.stop();
+                  if (this.value === "grouped") transitionGrouped();
+                  else transitionStacked();
+                }
+
+                function transitionGrouped() {
+                  y.domain([0, yMax]);
+                  g5.selectAll("g.axis.y")
+                      .call(d3.axisLeft(y2).ticks(yMax));
+                  rect.transition()
+                      .duration(500)
+                      .delay(function(d, i) { return i * 10; })
+                      .attr("x", function(d, i) { return x(i) + x.bandwidth() / n * this.parentNode.__data__.key; })
+                      .attr("width", x.bandwidth() / n)
+                      .transition()
+                      .attr("y", function(d) { return y(d[1] - d[0]); })
+                      .attr("height", function(d) { return y(0) - y(d[1] - d[0]); });
+                }
+
+                function transitionStacked() {
+                  y.domain([0, y1Max]);
+                  g5.selectAll("g.axis.y")
+                    .call(d3.axisLeft(y).ticks(y1Max));
+                  rect.transition()
+                    .duration(500)
+                    .delay(function(d, i) { return i * 10; })
+                    .attr("y", function(d) { return y(d[1]); })
+                    .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+                    .transition()
+                    .attr("x", function(d, i) { return x(i); })
+                    .attr("width", x.bandwidth());
+                }
+              }                          
+            }  
+          })
+        });
+      }
+      //-------------------------------------------init var----------------------/////////// 
+      //-画布
+      var width  =800;
+      var height = 600 ;
+      
+      //-地图init 
+      var mds_width = 500;
+      var mds_height = 500;
+      var voronoi = d3.voronoi()//-d3.geom.voronoi() for d3
+        .extent([[0, 0], [mds_width+600, mds_height+300]]);//-.clipExtent() for v3
+      //-商铺点读取和init
+      var rate=0.5;
+      var shops_pos = !{JSON.stringify(arrData)}.map(function (item) {
+        return [item[0]*rate,item[1]*rate];
+      });//-).map(x => x * rate);
+      var shop_id = !{JSON.stringify(arrShopid)};
+
+      var shops_num = shops_pos.length;
+
+      var vertices_num = 32000;
+      var vertices = d3.range(vertices_num).map(function(d) {
+          return [Math.random() * (mds_width+1500), Math.random() *(mds_height+3200)];
+      });
+      var center_flag = [];
+      var center_pos = [];
+      var center_num = 15;
+      var voronoi_paths;
+      var vertices_area = [];  //散点聚类结果
+      var shops_area = [];  //店铺聚类结果
+      var voronoi_threshold = 100;  //泰森多边形接受阈值
+      var cluster_threshold = 200;  //店铺中心点聚类阈值         
+      //-价格数据读取与排序
+      var prices = !{JSON.stringify(arrPrice)};  //原始价格指数数组（下标与店铺一一对应）
+      var prices_desc = (!{JSON.stringify(arrPrice)}).sort(function (x,y) {return y-x;});  //降序后的价格指数数组
+      var center_price = prices_desc.slice(0, center_num);
+      //-热图数据
+      var user_pos = !{JSON.stringify(arrPos)}.map(function(item){return item.map(function(i){ return [i[0]*rate,i[1]*rate]})})      //- var user_num = user_pos.length;
+      var color = d3.scaleSequential(d3.interpolateYlGnBu)
+        .domain([0, 0.8]); 
+      //-生成柱状图数据
+      var barChartFlag = 0;
+      var selectPoint = [];
+      var date = "";
+
+      //-------------------------商铺与价格数据算法处理----------------------/////////// 
+      for(let i = 0;i < shops_num;i++) {
+        center_flag.push(0);
+      }
+
+      for(let i = 0;i < shops_num;i++) {
+        if(center_price.indexOf(prices[i]) != -1) {
+          center_flag[i] = 1;
+          center_pos.push(shops_pos[i]);
+          //pos_rank[i].push(center_pos)//add
+        }
+      }
+      for(let i = 0;i < vertices_num;i++) {
+        vertices_area.push(100);
+      }
+      for(let p = 0;p < shops_num;p++){
+        var shortest = 100;
+        shops_area.push(center_num);
+        for(let c = 0;c < center_num;c++){
+          //- console.log(shops_pos[p]);
+          //- console.log(center_pos[c]);
+          var d = Math.sqrt(Math.pow(shops_pos[p][0] - center_pos[c][0],2) + Math.pow(shops_pos[p][1] - center_pos[c][1],2));
+          if(d > cluster_threshold) {
+            //- console.log(d + " bigger than cluster_threshold")
+            continue;
+          }
+          else {
+            //- console.log(d + " smaller than cluster_threshold")
+            if(d < shortest) {
+                //更新最小距离
+                shortest = d;
+                //记录对应区域信息
+                shops_area[p] = c;}
+          }
+        }
+      }
+      for(let i = 0;i < vertices_num;i++){
+        var nearest = 1000;
+        for(let s = 0;s < shops_num;s++){
+          var distance = Math.sqrt(Math.pow(vertices[i][0] - shops_pos[s][0],2) + Math.pow(vertices[i][1] - shops_pos[s][1],2));
+            if(distance > voronoi_threshold) {
+                continue;
+            }
+            else {
+              if(distance < nearest) {
+                  //更新最小距离
+                  nearest = distance;
+                  //记录对应区域信息
+                  vertices_area[i] = shops_area[s];}
+            }
+        }
+      }
+
+      //-zoom缩放
+      var zoom = d3.zoom()
+        .scaleExtent([1,1])
+        .on("zoom", zoomed);
+      function zoomed() {
+        d3.select("g.g11").attr("transform", d3.event.transform);
+        d3.select("g.g22").attr("transform", d3.event.transform);
+        d3.select("g.g33").attr("transform", d3.event.transform);
+       }
+
+      //-地图块上色------------------------------------------//////////////////////////
+      //-var colorScale = d3.schemeCategory20;
+      var backgroundColorSet=["#BFE5FC","#A8DCF6","#96D9F6",
+              "#7BCDFF","#64CEE3","#8DC2EB",
+              "#5EBEFE","#74BADC","#37AFEB",
+              "#60ABE3","#3A9FFC","#3095E5",
+              "#2F95E4","#1C89DB","#0F80D0","#dedede"];
+      var price_map=[];
+      var count=[];
+      var meanPrice=[];
+      var meanPrice_temp=[];
+      var mean_index=[];
+      for(let i = 0;i <= center_num;i++) {
+        price_map.push(0);
+        count.push(0);
+        meanPrice.push(0);
+        mean_index.push(0);
+        meanPrice_temp.push(0); 
+      }
+      for (let i=0;i<prices.length;i++){
+        price_map[shops_area[i]]+=parseFloat(prices[i]);
+        count[shops_area[i]]++;      
+      }
+      for (let i=0;i<=center_num;i++){
+        meanPrice[i]=price_map[i]/count[i];
+        meanPrice_temp[i]=price_map[i]/count[i];
+      }
+      var mean_desc = (meanPrice_temp).sort(function (x,y) {return y-x;});  //降序后的价格指数数组
+     
+      for(let i = 0;i < meanPrice.length; i++) {
+        mean_index[i]=mean_desc.indexOf(meanPrice[i]);
+      }
+
+      //-voronori多边形-----------------------//////////////////////////////////
+      var map = d3.select("#map svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("transform","translate(0,0)")
+        .call(zoom);
+      var voronoi = d3.voronoi()//-d3.geom.voronoi() for d3
+        .extent([[0, 0], [mds_width+600, mds_height+300]]);//-.clipExtent() for v3
+      var data = voronoi.polygons(vertices)
+      .map(function(d){
+          return "M" + d.join("L") + "Z"; 
+        });  
+      //-地图g
+      //-var g = map.append("g");
+      var g=d3.select("#map svg").append("g");
+      g.attr("class","g11");
+      voronoi_paths= g.selectAll("path.vertices");
+      voronoi_paths = voronoi_paths.data(data);
+      voronoi_paths.enter().append("path")
+        .attr("class", "vertices")
+        .attr("stroke-width",1)
+        .attr("opacity",1)
+        .attr("full-opacity",1)
+        .attr("d",function(d){
+          return d; 
+        })
+        .attr("fill", function(d,i){
+          if(vertices_area[i] == 100) {
+            return "#FFFFFF";
+          }
+          else {
+            return backgroundColorSet[vertices_area[i]];
+          }
+        })
+        .attr("stroke", function(d, i) {
+          if(vertices_area[i] == 100) {
+            return "#FFFFFF";
+          } else {
+            return backgroundColorSet[vertices_area[i]];
+          }
+        });
+
+      function getNeibor(index) {
+        var area = shops_area[index];
+        var neibor = "";
+        for(let s = 0; s < shops_num; s++){
+          if(shops_area[s] == area) {
+            if(s != index) {
+              neibor+=(shop_id[s]+" ");
+            }     
+          }
+        }
+        return neibor;
+      }
+      //- 商铺点g3
+      var g3 = d3.select("#map svg").append("g");
+      var cuName = "";
+      var noClickName = "";
+      g3.attr("class","g33");
+      var nodes = g3.selectAll("image.event")
+        .data(shops_pos)
+        .enter()
+      nodes.append("image")
+        .attr("class","event")
+        .attr("id", function(d, i) { return shop_id[i]; })
+        .attr("x", function(d, i) { return d[0]; })
+        .attr("y", function(d, i) { return d[1]; })
+        .attr("data-toggle","tooltip")
+        .attr("data-placement","right")
+        .attr("title",function(d, i) { return shop_id[i]; })
+        .attr("width",function(d,i){
+          if(center_flag[i] === 1){
+              return 20;
+          } else {
+              return 14;
+          }
+        })
+        .attr("height",function(d,i){
+          if(center_flag[i] === 1){
+              return 20;
+          } else {
+              return 14;
+          }
+        })
+        .attr("xlink:href",function(d,i){
+          if(center_flag[i] === 1){
+              return "images/center1.png";
+          } else {
+              return "images/normal.png";
+          }
+        })
+        .on("mouseover",function(d,i){
+          $("#shopTip").html("当前店铺  " + shop_id[i] + "<br/>--------------------<br/>位置：" + d[0]+"<br/>"+d[1]+ "<br/>价格指数：" +prices[i] + "<br/>周边店铺：" +getNeibor(i)+"<br/>--------------------");
+          $("#shopTip").fadeIn("slow");
+          if(d3.select(this).attr("name") != "selected"){
+            if (center_flag[i] === 1){
+              d3.select(this)
+                .attr("xlink:href","images/mouseoverCenter1.png")
+            }
+            else{
+              d3.select(this)
+                .attr("xlink:href","images/mouseoverNormal.png")
+            }
+          }
+        })
+        .on("mouseout",function(d,i){
+          $("#shopTip").fadeOut("slow");
+          if(noClickName == cuName && d3.select(this).attr("name") != "selected"){
+            if (center_flag[i] === 1){
+              d3.select(this)
+                .attr("xlink:href","images/center1.png")
+            }
+            else{
+              d3.select(this)
+                .attr("xlink:href","images/normal.png")
+            }
+          }
+          else{
+            noClickName = cuName;
+          }
+        })
+        .on("click",function(d,i){
+          if (d3.select(this).attr("name") == "selected" && center_flag[i] === 1){
+            cuName = d3.select(this).attr("name");
+            d3.select(this)
+              .attr("name", "cancelled")
+              .attr("xlink:href","images/center1.png")
+          }
+          else if (d3.select(this).attr("name") == "selected" && center_flag[i] != 1){
+            cuName = d3.select(this).attr("name");
+            d3.select(this)
+              .attr("name", "cancelled")
+              .attr("xlink:href","images/normal.png")
+          }
+          else if (center_flag[i] === 1){
+            cuName = d3.select(this).attr("name");
+            d3.select(this)
+              .attr("name", "selected")
+              .attr("xlink:href","images/selectedCenter1.png")
+          }
+          else{
+            cuName = d3.select(this).attr("name");
+            d3.select(this)
+              .attr("name", "selected")
+              .attr("xlink:href","images/selectedNormal.png")
+          }
+        });    
+       
+
+        //- 时间轴 按天---------------------////////////////
+        var g4=d3.select("#timeline svg")
+            .append("g");
+            //-.attr("style" , "position: absolute")
+        //-var svg = d3.select("body.container-fluid.row.col-sm-9.col-md-offset-2.timeline.svg"),
+            margin = {right: 50, left: 50};
+            //-width = +svg.attr("width") - margin.left - margin.right,
+            //-height = +svg.attr("height");
+        //-线性比例尺
+        var x = d3.scaleLinear()
+           .domain([0, 31])  //-定义域
+           .range([0, width]) //-值域
+           .clamp(true); //-紧缩设定变换，防止数值超出限定区域
+        //-定义滑动轴，属性设定
+        var slider = g4//-.append("g")
+          .attr("class", "slider")
+          .attr("transform", "translate(" + margin.left + "," + height / 18 + ")");
+
+        slider.append("line")
+          .attr("class", "track")
+          .attr("x1", x.range()[0])
+          .attr("x2", x.range()[1])
+          .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+          .attr("class", "track-inset")
+          .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+          .attr("class", "track-overlay")
+          .call(d3.drag()//-拖动
+          .on("start.interrupt", function() { slider.interrupt(); })
+          .on("start drag", function() {
+              user_pos1 =  hue(parseInt(x.invert(d3.event.x))); 
+              heatmap(parseInt(x.invert(d3.event.x)));
+
+          }))
+
+        //-坐标
+        slider.insert("g", ".track-overlay")
+          .attr("class", "ticks")
+          .attr("transform", "translate(0," + 18 + ")")
+          .selectAll("text")
+          .data(x.ticks(30))//-刻度数
+          .enter().append("text")
+          .attr("x", x)
+          .attr("text-anchor", "middle")
+          .text(function(d) { return d ; });
+
+        //-滑块
+        var handle = slider.insert("circle", ".track-overlay")
+        .attr("class", "handle")
+        .attr("r", 9);
+
+        function hue(h) {
+          handle.attr("cx", x(h));
+          return  user_pos[h-1];
+        }
+
+
+        //- 热图g2
+        function heatmap(i){
+          d3.select("g.g22").remove();
+          var g2 = d3.select("svg").append("g")
+            .attr("id","heatmap")
+            //-.attr("style","display: none")
+            .attr("preserveAspectRatio", "xMidYMid meet");
+          var widthG = 1000;
+          var heightG = 800;
+          var color = d3.scaleLinear()
+            .domain([0, 0.02])// Points per square pixel.
+            .range(["#FEE77D", 'red']); 
+          g2.attr("fill", "none")
+            .attr("stroke", "#000")
+            .attr("class","g22")
+            .attr("stroke-width", 0.1)
+            .attr("opacity",0.5)
+            .attr("stroke-linejoin", "round")
+            .selectAll("path")
+            .data(d3.contourDensity()
+            .x(function (d,i) { return d[0]; })
+            .y(function (d,i) { return d[1]; })
+            .thresholds([0.001,0.004,0.007,0.01,0.013,0.016,0.02,0.025,0.03,0.035,0.04,0.05,0.06])
+            .cellSize(3)
+            .size([widthG, heightG])
+            //.bandwidth(25)
+            (user_pos1))//data heat
+            .enter().append("path")
+            .attr("fill", function (d) { return color(d.value) })
+            .attr("d", d3.geoPath());
+        }
+
+
+      //-heatmap图例
+      //- var seriesData = {
+      //-   series: [
+      //-   {//-"group的值等于threshold/4"
+      //-   "seriesName": "0.004 person/pixel",
+      //-   "group": "0.001"
+      //-   },
+      //-   {
+      //-   "seriesName": "0.007 person/pixel",
+      //-   "group": "0.00175"
+      //-   },
+      //-   {
+      //-   "seriesName": "0.01 person/pixel",
+      //-   "group": "0.0025"
+      //-   },
+      //-   {
+      //-   "seriesName": "0.013 person/pixel",
+      //-   "group": "0.00325"
+      //-   },
+      //-   {
+      //-   "seriesName": "0.016 person/pixel",
+      //-   "group": "0.004" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.02 person/pixel",
+      //-   "group": "0.005" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.025 person/pixel",
+      //-   "group": "0.00625" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.03 person/pixel",
+      //-   "group": "0.0075" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.035 person/pixel",
+      //-   "group": "0.00875" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.04 person/pixel",
+      //-   "group": "0.01" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.05 person/pixel",
+      //-   "group": "0.0125" 
+      //-   },
+      //-   {
+      //-   "seriesName": "0.06 person/pixel",
+      //-   "group": "0.015" 
+      //-   }
+      //-   ]
+      //- };
+      //- addLegend();
+      //- function addLegend() {
+      //-   var seriesNames = getSeriesName(seriesData);
+      //-   var legend = d3.select("#picEx svg").selectAll(".legend")
+      //-     .data(seriesNames)//seriesNames.slice().reverse() 
+      //-     .enter().append("g")
+      //-     .attr("class", "legend")
+      //-     .attr("transform", function (d, i) { return "translate(40," + i * 15 + ")"; });
+
+      //-     legend.append("circle")
+      //-       .attr("cx", function (d, i) {
+      //-       return 10;
+      //-     })
+      //-       .attr("cy", function (d, i) {
+      //-       return i > 0 ? 40 + 15 * i : 40;
+      //-     })
+      //-       .attr("r", function (d) { return 16; })
+      //-       .data(seriesData.series)
+      //-       .attr("opacity",0.6)
+      //-       .style("fill", function (d) { 
+      //-         return color(d.group);
+      //-     });
+
+      //-     legend.append("text")
+      //-       .attr("x", 10)
+      //-       .attr("y", function (d, i) {
+      //-       return i > 0 ? 40 + 15 * i : 40;
+      //-     })
+      //-       .data(seriesData.series)
+      //-       .attr("dy", ".35em")
+      //-       .style("text-anchor", "end")
+      //-       .text(function (d) { return d.seriesName; });
+      //- //- };
+      //- //-返回系列名
+      //- function getSeriesName(data) {
+      //-   var len = data.series.length;
+      //-   var seriesName = [];
+      //-   for (var i = 0; i < len; i++) {
+      //-     seriesName.push(data.series[i].seriesName);
+      //-   }
+      //-     return seriesName;
+      //- }
+
+    script(src='https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js')
+    script(src='https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js')
+    script(src='https://cdn.bootcss.com/bootstrap-switch/3.3.4/js/bootstrap-switch.min.js')
+    script(src='/js/bootstrap-datetimepicker.min.js')
+      
+      
