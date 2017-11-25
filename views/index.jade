@@ -706,7 +706,21 @@ html
           .enter().append("text")
           .attr("x", x)
           .attr("text-anchor", "middle")
-          .text(function(d) { return d ; });
+          .text(function(d) { if (d == 0){
+               return "off";
+             }
+             else if (d%10 == 1){
+               return d + "st";
+             }
+             
+             else if(d%10 == 2){
+               return d + "nd";
+             }
+             else if(d%10 == 3){
+               return d + "rd";
+             }
+             else return d + "th";
+          });
 
         //-滑块
         var handle = slider.insert("circle", ".track-overlay")
