@@ -1,4 +1,4 @@
-# Visualization Of The Data Of Shopping Mall
+# Visualization Of The Data Relating to Shopping Mall
 :convenience_store:a website for visualization of shopping mall data
 
 In this project, we apply the visualization technology to shopping mall consumption analysis.  
@@ -6,9 +6,10 @@ In this project, we apply the visualization technology to shopping mall consumpt
 **Wiki:http://118.190.210.193/UCAS_17_Fall/index.php/Group_F_Mass_Shooting_in_US_VIS_Project**
 
 **Online Demo：https://visofmall.herokuapp.com/**  
+
 **For the first time you visit the website MallFlow, it will take some time to load the data. You may have to wait for a while.**
 
-## Use for the demo code  
+## Usege for the demo code  
 
 Execute the following in the terminal.
 
@@ -18,7 +19,7 @@ $ cd VISOfMall
 $ npm install
 $ node app.js
 ```
-open your browser and access to`localhost:3000`.
+open your browser and visit `localhost:3000`.
 
 Here are some details:
 
@@ -36,30 +37,30 @@ There are two tables:
 
 1. Mall-Shop table  
 
-| Field | Description | 
-| ------------- | ------------- |
-| shop_id | eg:s_26 |
-| longitude | longitude of the shop, eg： 122.346736 |
-| latitude | latitude of the shop, eg： 31.833507  |
-| price | Per capita consumption, eg： 57  |
-| mall_id | eg:m_690 |
+    | Field | Description | 
+    | ------------- | ------------- |
+    | shop_id | eg:s_26 |
+    | longitude | longitude of the shop, eg： 122.346736 |
+    | latitude | latitude of the shop, eg： 31.833507  |
+    | price | Per capita consumption, eg： 57  |
+    | mall_id | eg:m_690 |
 
 2. Shop-Behavior table
 
-| Field | Description |  
-| ------------- | ------------- |
-| user_id |	id of the consumer, eg:u_395761 |  
-| shop_id |	the shop id where the consumer is |  
-| time_stamp |	consumer behavior timestamp, eg:2017/8/2 20:40:00 |  
-| longitude | longitude of the consumer |  
-| latitude	| latitude of the consumer |  
+    | Field | Description |  
+    | ------------- | ------------- |
+    | user_id |	id of the consumer, eg:u_395761 |  
+    | shop_id |	the shop id where the consumer is |  
+    | time_stamp |	consumer behavior timestamp, eg:2017/8/2 20:40:00 |  
+    | longitude | longitude of the consumer |  
+    | latitude	| latitude of the consumer |  
 
 ### User & Task  
 
 * Target User:shopping malls managers
 * Tasks
-    1. Sales Analysis:compare different time periods, different store sales.
-    2. Manpower dispatch:increase manpower input during the peak of consumption, and save manpower cost during the frosty period of consumption.
+    1. Sales Analysis: compare different time periods, different store sales.
+    2. Manpower dispatch: increase manpower input during the peak of consumption, and save manpower cost during the frosty period of consumption.
     3. Ad serving: advertising in places with high customer traffic, or drainage in shops with low traffic.
 
 ### Novelty  
@@ -108,7 +109,7 @@ The data are analyzed from the following aspects：
 * Map Generate
 
     1. First of all, we printed all the shop in the space and sorted them by the consumption index, and them we selected the top 15 shops with higher consumption index as center shops. We also generated 30000 random points underneath the shop points for the next print step.  
-        ![Map1](public/Map1.png)  
+        ![Map1](public/images/Map1.png)  
     2. Secondly, we used clustering algorithm to classify all the shops and printing the area in one color that belong to the same category. In details, the clustering algorithm can be divided in two steps:
         * As there are 138 shop points, we chose them as clustering center, then classified the random points by calculating their distance to the center points, each random point belongs to the category of the nearest shop points. So we classified 30000 points in 138 categories.
         * We used the clustering algorithm for second times to classify the shop points. We set the top 15 shop centers that have been selected before as clustering center, and then calculated the distance between each shop and top 15 shops centers, each shop was classified to the nearest shop center.   
@@ -120,6 +121,7 @@ The data are analyzed from the following aspects：
 
         1. We used heat map to express the daily consumer behavior. Firstly, we put the daily consumer point of the mall into the same space of the map.
         ![Heatmap1](public/images/Heatmap1.png)  
+
         2. Secondly, we visualized the intensity of consumption behavior with different shades of color.
         ![Heatmap2](public/images/Heatmap2.png)  
 
