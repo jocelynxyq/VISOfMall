@@ -109,24 +109,23 @@ The data are analyzed from the following aspects：
 * Map Generate
 
     1. First of all, we printed all the shop in the space and sorted them by the consumption index, and them we selected the top 15 shops with higher consumption index as center shops. We also generated 30000 random points underneath the shop points for the next print step.  
-        ![Map1](public/images/Map1.png)  
-        <div align=center><img src="public/images/Map1.png" width="300" /></div>
+        <div align=center><img src="public/images/Map1.png" width="500" /></div>
     2. Secondly, we used clustering algorithm to classify all the shops and printing the area in one color that belong to the same category. In details, the clustering algorithm can be divided in two steps:
         * As there are 138 shop points, we chose them as clustering center, then classified the random points by calculating their distance to the center points, each random point belongs to the category of the nearest shop points. So we classified 30000 points in 138 categories.
         * We used the clustering algorithm for second times to classify the shop points. We set the top 15 shop centers that have been selected before as clustering center, and then calculated the distance between each shop and top 15 shops centers, each shop was classified to the nearest shop center.   
-        ![Map2](public/images/Map2.png)   
+        <div align=center><img src="public/images/Map2.png" width="500" /></div>
     Through the two steps above, we adjusted the classification threshold and got the final map of the mall.  
-    ![Map3](public/images/Map3.png)  
+    <div align=center><img src="public/images/Map3.png" width="500" /></div>
 
     * Heat map
 
         1. We used heat map to express the daily consumer behavior. Firstly, we put the daily consumer point of the mall into the same space of the map.  
 
-        ![Heatmap1](public/images/Heatmap1.png)  
+        <div align=center><img src="public/images/Heatmap1.png" width="500" /></div>
 
         2. Secondly, we visualized the intensity of consumption behavior with different shades of color.  
         
-        ![Heatmap2](public/images/Heatmap2.png)  
+        <div align=center><img src="public/images/Heatmap2.png" width="500" /></div>
 
     * Bar graph
 
