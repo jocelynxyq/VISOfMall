@@ -3,7 +3,7 @@
 
 In this project, we apply the visualization technology to shopping mall consumption analysis.  
 
-**Wiki:http://118.190.210.193/UCAS_17_Fall/index.php/Group_F_Mass_Shooting_in_US_VIS_Project**
+**Wiki:http://118.190.210.193/UCAS_17_Fall/index.php/Group_E_Market_VIS_Project_Final**
 
 **Online Demo：https://visofmall.herokuapp.com/**  
 
